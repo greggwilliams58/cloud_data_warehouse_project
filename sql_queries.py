@@ -71,11 +71,11 @@ songplay_table_create = ("""CREATE TABLE IF NOT EXISTS fact_songplays (
 """)
 
 user_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_users  (
-        user_id       int           NOT NULL PRIMARY KEY,
-        first_name    nvarchar(50),
-        last_name     nvarchar(50),
-        gender        nvarchar(10),
-        level         nvarchar(50)
+        user_id            int  NOT NULL PRIMARY KEY,
+        user_first_name    nvarchar(50),
+        user_last_name     nvarchar(50),
+        gender             nvarchar(10),
+        level              nvarchar(50)
         )
         diststyle all;
 """)
@@ -102,6 +102,7 @@ artist_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_artists (
 
 time_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_time (
         time_id     int        IDENTITY(0,1) PRIMARY KEY NOT NULL,
+        start_time  datetime,
         hour        int,
         week        int,
         month       int,
@@ -127,8 +128,8 @@ staging_songs_copy = ("""copy staging_songs
                         json 'auto';
                         """).format(ARN_ROLE)
 
-# FINAL TABLES
 
+# FINAL TABLES
 songplay_table_insert = ("""
 """)
 
