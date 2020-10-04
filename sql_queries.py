@@ -5,9 +5,10 @@ import configparser
 config = configparser.ConfigParser()
 config.read('dwh.cfg')
 
-ARN_ROLE = config.get('IAM_ROLE','ARN_ROLE')
-
-
+IAM_ROLE      = config.get('IAM_ROLE','ARN')
+LOG_DATA      = config.get('S3','LOG_DATA')
+LOG_JSON_PATH = config.get('S3','LOG_JSONPATH')
+SONG_DATA     = config.get('S3','SONG_DATA')
 
 # DROP TABLES
 
@@ -22,7 +23,7 @@ time_table_drop = "DROP TABLE IF EXISTS dimt_time"
 # CREATE TABLES
 
 staging_events_table_create = ("""CREATE TABLE IF NOT EXISTS staging_events (
-        artist             nvarchar(100),
+        artist             nvarchar(500),
         auth               nvarchar(20),
         first_name         nvarchar(50),
         gender             nvarchar(10),
@@ -30,9 +31,10 @@ staging_events_table_create = ("""CREATE TABLE IF NOT EXISTS staging_events (
         last_name          nvarchar(50),
         length             numeric(11,5),
         level              nvarchar(50),
-        location           nvarchar(256),
+        location           text,
         method             nvarchar(5),
-        page               nvarchar(15),
+        page               nvarchar,
+        registration       float,
         session_id         int,
         song               nvarchar(256),
         status             int,
@@ -47,10 +49,10 @@ staging_songs_table_create = (""" CREATE TABLE IF NOT EXISTS staging_songs(
         artist_id         nvarchar(25),
         artist_latitude   numeric(20,8),
         artist_longitude  numeric(20,8),
-        artist_location   nvarchar(60),
-        artist_name       nvarchar(150),
+        artist_location   text,
+        artist_name       nvarchar(500),
         song_id           nvarchar(25),
-        title             nvarchar(150),
+        title             nvarchar(256),
         duration          numeric(10,5),
         year              int
         )
@@ -85,14 +87,14 @@ song_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_songs (
         title        nvarchar(150),
         artist_id    nvarchar(25),
         year         int,
-        duration     numeric(10,5)
+        duration     numeric(11,5)
         )
         diststyle all;
 """)
 
 artist_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_artists (
         artist_id         nvarchar(25) NOT NULL PRIMARY KEY,
-        artist_name       nvarchar(150),
+        artist_name       nvarchar(500),
         artist_location   nvarchar(60),
         artist_latitude   numeric(20,8),
         artist_longitude  numeric(20,8) 
@@ -114,23 +116,29 @@ time_table_create = ("""CREATE TABLE IF NOT EXISTS dimt_time (
 
 # STAGING TABLES
 
-staging_events_copy = ("""copy staging_events
-                          from 's3://udacity-dend/log_data'
+staging_events_copy = ("""COPY staging_events FROM {}
                           credentials 'aws_iam_role={}'
                           region 'us-west-2'
-                          json 'auto';
-                          """).format(ARN_ROLE)
+                          format as json {};
+                          """).format(LOG_DATA,IAM_ROLE,LOG_JSON_PATH)
 
-staging_songs_copy = ("""copy staging_songs
-                        from 's3://udacity-dend/song_data/A/A/A'
-                        credential 'aws_iam_role={}'
+staging_songs_copy = ("""COPY staging_songs FROM {}
+                        credentials 'aws_iam_role={}'
                         region 'us-west-2'
                         json 'auto';
-                        """).format(ARN_ROLE)
+                        """).format(SONG_DATA,IAM_ROLE)
 
 
 # FINAL TABLES
-songplay_table_insert = ("""
+songplay_table_insert = ("""INSERT INTO                                   fact_songplays(start_time,user_id,level,song_id,artist_id,session_id,location,user_agent)
+SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time, user_id ,level,song_id,artist_id,session_id,location,user_agent
+FROM staging_events AS events
+JOIN staging_songs AS songs
+ON (events.artist = songs.artist_name)
+AND (events.song = songs.title)
+AND (events.length = songs.duration)
+WHERE page = 'NextSong'
+                             
 """)
 
 user_table_insert = ("""
@@ -139,7 +147,9 @@ user_table_insert = ("""
 song_table_insert = ("""
 """)
 
-artist_table_insert = ("""
+artist_table_insert = ("""INSERT INTO dimt_artists (artist_id, artist_name,artist_location,artist_latitude,artist_longitude)
+                           SELECT DISTINCT (artist_id,artist_name,artist_location,artist_latitude ,artist_longitude)
+                           FROM staging_songs WHERE artist_id IS NOT NULL
 """)
 
 time_table_insert = ("""
@@ -153,4 +163,5 @@ drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songp
 
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 
-insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+#insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+insert_table_queries = [songplay_table_insert]
