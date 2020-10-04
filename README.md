@@ -1,16 +1,16 @@
 # Cloud Data Warehouse Project
 
-##1. Purpose of this database
+## 1. Purpose of this database
 This database has been designed to allow Sparkify to place their data onto a cloud based Redshift data warehouse for later subsequent data analysis.  Their data was prevously held in the format of JSON files on S3 buckets, with separate folders for user_activity and song information.  The data has been moved to the cloud to take advantage of the cloud's scaleability, reduction in up-front costs of using on-premises servers and to make use of other AWS analytical services in due course 
 
-##2. How to execute this code
+## 2. How to execute this code
 Go to a terminal session and type "python create_tables.py"  This will be a brief execution as the script calls the drop_tables function to drop a set of tables defined by the list in the sql_queries.py file.  The create_tables function is then used to create the necessary tables for the rest of the project.
 
 Create a redshift cluster in the normal manner, either from the AWS front page or a IaC script.
 
 Once the cluster is up and running with the necessary permissions to access the s3 service, then type "etl.py" in the terminal.  This will copy the relevant data from the s3 buckets into the staging_tables, which are then inserted to the fact and dimt tables as needed.
 
-##3. Files in project
+## 3. Files in project
     1. create_tables.py - Python script to drop and create tables in dwh database, held on a redshift cluster
     2. sql_queries.py - Python script holding the various SQL queries used by create_tables.py and elt.py
     3. etl.py - Python script to run the ETL process
