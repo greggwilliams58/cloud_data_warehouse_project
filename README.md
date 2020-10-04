@@ -19,7 +19,7 @@ Once the cluster is up and running with the necessary permissions to access the 
     6. staging_tables.jog - a diagrame of the staging tables and their implied relationship
     7, READ_ME - this document which documents this project.
 
-##4. Project Design
+## 4. Project Design
 ###    1. Database Schema Design
 Two staging tables have been created, which are exact copies of the data sourced from the json files in the s3 buckets.  The purpose of these tables is to provide an initial landing point for the data within the redshift database.  This 'staging table' allows the raw data to be examined easily for data quality and consistency prior to any subsequent transformations.  The placing of the raw data within the same data warehouse in different tables allows for a relatively quick and simple set of transformations to be done through SQL as the data is inserted into the relevant tables (eg, changing the milliseconds bigint values  'staging_songs.ts' into a timestamp value in 'dimt_time.start_time')
 
